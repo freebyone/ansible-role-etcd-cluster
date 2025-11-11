@@ -4,15 +4,31 @@ ETCD_DATA_DIR={{ etcd_data_dir }}
 
 # Cluster configuration
 ETCD_INITIAL_CLUSTER_STATE={{ etcd_initial_cluster_state | default('new') }}
-ETCD_INITIAL_CLUSTER_TOKEN={{ etcd_cluster_name }}
+ETCD_INITIAL_CLUSTER_TOKEN={{ etcd_cluster_token }}
 ETCD_INITIAL_CLUSTER={{ etcd_initial_cluster }}
 
 # Listener configuration
-ETCD_LISTEN_PEER_URLS=http://{{ ansible_default_ipv4.address }}:{{ etcd_peer_port }}
-ETCD_LISTEN_CLIENT_URLS=http://{{ ansible_default_ipv4.address }}:{{ etcd_client_port }},http://127.0.0.1:{{ etcd_client_port }}
-ETCD_ADVERTISE_CLIENT_URLS=http://{{ inventory_hostname }}:{{ etcd_client_port }}
-ETCD_INITIAL_ADVERTISE_PEER_URLS=http://{{ inventory_hostname }}:{{ etcd_peer_port }}
+ETCD_LISTEN_PEER_URLS={% if etcd_enable_tls %}https{% else %}http{% endif %}://{{ ansible_default_ipv4.address }}:{{ etcd_peer_port }}
+ETCD_LISTEN_CLIENT_URLS={% if etcd_enable_tls %}https{% else %}http{% endif %}://{{ ansible_default_ipv4.address }}:{{ etcd_client_port }},{% if etcd_enable_tls %}https{% else %}http{% endif %}://127.0.0.1:{{ etcd_client_port }}
+ETCD_ADVERTISE_CLIENT_URLS={% if etcd_enable_tls %}https{% else %}http{% endif %}://{{ inventory_hostname }}:{{ etcd_client_port }}
+ETCD_INITIAL_ADVERTISE_PEER_URLS={% if etcd_enable_tls %}https{% else %}http{% endif %}://{{ inventory_hostname }}:{{ etcd_peer_port }}
 
 # Other settings
 ETCD_AUTO_COMPACTION_MODE={{ etcd_auto_compaction_mode }}
 ETCD_AUTO_COMPACTION_RETENTION={{ etcd_auto_compaction_retention }}
+
+{% if etcd_enable_tls %}
+# TLS/SSL configuration
+ETCD_CLIENT_CERT_AUTH=true
+ETCD_TRUSTED_CA_FILE={{ etcd_ca_cert }}
+ETCD_CERT_FILE={{ etcd_server_cert }}
+ETCD_KEY_FILE={{ etcd_server_key }}
+ETCD_PEER_CLIENT_CERT_AUTH=true
+ETCD_PEER_TRUSTED_CA_FILE={{ etcd_ca_cert }}
+ETCD_PEER_CERT_FILE={{ etcd_server_cert }}
+ETCD_PEER_KEY_FILE={{ etcd_server_key }}
+{% endif %}
+
+# Performance tunning
+ETCD_HEARTBEAT_INTERVAL=500
+ETCD_ELECTION_TIMEOUT=5000
