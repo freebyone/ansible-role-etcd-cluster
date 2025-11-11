@@ -1,0 +1,54 @@
+---
+- name: Create certificates directory
+  file:
+    path: "{{ etcd_certs_dir }}"
+    state: directory
+    owner: "{{ etcd_user }}"
+    group: "{{ etcd_group }}"
+    mode: '0755'
+  when: etcd_enable_tls
+
+- name: Copy CA certificate
+  copy:
+    src: "{{ ca_cert_src | default('files/ca.pem') }}"
+    dest: "{{ etcd_ca_cert }}"
+    owner: "{{ etcd_user }}"
+    group: "{{ etcd_group }}"
+    mode: '0644'
+  when: etcd_enable_tls
+
+- name: Copy server certificate
+  copy:
+    src: "{{ server_cert_src | default('files/server.pem') }}"
+    dest: "{{ etcd_server_cert }}"
+    owner: "{{ etcd_user }}"
+    group: "{{ etcd_group }}"
+    mode: '0644'
+  when: etcd_enable_tls
+
+- name: Copy server key
+  copy:
+    src: "{{ server_key_src | default('files/server-key.pem') }}"
+    dest: "{{ etcd_server_key }}"
+    owner: "{{ etcd_user }}"
+    group: "{{ etcd_group }}"
+    mode: '0600'
+  when: etcd_enable_tls
+
+- name: Copy client certificate
+  copy:
+    src: "{{ client_cert_src | default('files/client.pem') }}"
+    dest: "{{ etcd_client_cert }}"
+    owner: "{{ etcd_user }}"
+    group: "{{ etcd_group }}"
+    mode: '0644'
+  when: etcd_enable_tls
+
+- name: Copy client key
+  copy:
+    src: "{{ client_key_src | default('files/client-key.pem') }}"
+    dest: "{{ etcd_client_key }}"
+    owner: "{{ etcd_user }}"
+    group: "{{ etcd_group }}"
+    mode: '0600'
+  when: etcd_enable_tls

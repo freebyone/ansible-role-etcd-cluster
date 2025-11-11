@@ -1,4 +1,8 @@
 ---
+- name: Include certificates setup
+  ansible.builtin.include_tasks: certificates.yml
+  when: etcd_enable_tls
+
 - name: Create group
   group:
     name: "{{ etcd_group }}"
@@ -78,10 +82,7 @@
     timeout: 30
 
 - name: Check etcd cluster health
-  shell: |
-    docker exec {{ etcd_cluster }} /usr/local/bin/etcdctl \
-      --endpoints=http://{{ etcd_client_host }}:{{ etcd_client_port }} \
-      endpoint health
+  shell: "{{ etcdctl_check_health }}"
   environment:
     ETCDCTL_API: "3"
   register: etcd_health

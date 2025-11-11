@@ -27,6 +27,12 @@
     path: "{{ etcd_data_dir }}"
     state: absent
 
+- name: Remove etcd certificates directory
+  file:
+    path: "{{ etcd_certs_dir }}"
+    state: absent
+  when: etcd_enable_tls
+
 - name: Reload systemd daemon
   systemd:
     daemon_reload: yes

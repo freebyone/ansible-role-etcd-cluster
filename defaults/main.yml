@@ -1,6 +1,15 @@
 flush_all: false
 delete_keys_storage: false
 
+# TLS configuration
+etcd_enable_tls: false
+etcd_certs_dir: "/etc/etcd/ssl"
+etcd_ca_cert: "{{ etcd_certs_dir }}/ca.pem"
+etcd_server_cert: "{{ etcd_certs_dir }}/server.pem"
+etcd_server_key: "{{ etcd_certs_dir }}/server-key.pem"
+etcd_client_cert: "{{ etcd_certs_dir }}/client.pem"
+etcd_client_key: "{{ etcd_certs_dir }}/client-key.pem"
+
 etcd_user: "root"
 etcd_group: "root"
 etcd_client_host: "localhost"
@@ -22,13 +31,21 @@ etcd_client_port: 2379
 etcd_peer_port: 2380
 
 # Use DNS
-etcd_initial_cluster: "{% for host in groups['etcd_cluster'] %}{{ hostvars[host].etcd_node_name | default(host) }}=http://{{ host }}:2380{% if not loop.last %},{% endif %}{% endfor %}"
+etcd_initial_cluster: "{% for host in groups['etcd_cluster'] %}{{ hostvars[host].etcd_node_name | default(host) }}=http{% if etcd_enable_tls %}s{% endif %}://{{ host }}:{{ etcd_peer_port }}{% if not loop.last %},{% endif %}{% endfor %}"
 etcd_node_name: "{{ inventory_hostname }}"
 
-# Command for control etcd keys
-etcdctl_base_command: "docker exec {{ etcd_cluster }} /usr/local/bin/etcdctl --endpoints=http://{{ etcd_client_host }}:{{ etcd_client_port }}"
+# Auto-compaction
+etcd_auto_compaction_mode: "periodic"
+etcd_auto_compaction_retention: "1"
 
-etcdctl_delete_all_keys: "{{ etcdctl_base_command }} del '' --prefix"
-etcdctl_list_keys: "{{ etcdctl_base_command }} get '' --prefix --keys-only"
+# Dynamic command TLS
+etcdctl_base_command: "docker exec {{ etcd_cluster }} /usr/local/bin/etcdctl"
+etcdctl_endpoints: "{% if etcd_enable_tls %}https{% else %}http{% endif %}://{{ etcd_client_host }}:{{ etcd_client_port }}"
+etcdctl_tls_args: "{% if etcd_enable_tls %}--cacert={{ etcd_ca_cert }} --cert={{ etcd_client_cert }} --key={{ etcd_client_key }}{% endif %}"
+
+# Control commands
+etcdctl_full_command: "{{ etcdctl_base_command }} --endpoints={{ etcdctl_endpoints }} {{ etcdctl_tls_args }}"
+etcdctl_delete_all_keys: "{{ etcdctl_full_command }} del '' --prefix"
+etcdctl_list_keys: "{{ etcdctl_full_command }} get '' --prefix --keys-only"
 etcdctl_count_keys: "{{ etcdctl_list_keys }} | wc -l"
-etcdctl_check_health: "{{ etcdctl_base_command }} endpoint health"
+etcdctl_check_health: "{{ etcdctl_full_command }} endpoint health"
