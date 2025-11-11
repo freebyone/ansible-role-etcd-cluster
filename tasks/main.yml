@@ -1,8 +1,12 @@
 ---
 - name: Include install tasks
   ansible.builtin.include_tasks: install.yml
-  when: not flash_all | default(false)
+  when: not flush_all
 
 - name: Include uninstall tasks  
   ansible.builtin.include_tasks: uninstall.yml
-  when: flash_all | default(false)
+  when: flush_all
+
+- name: Delete keys storage
+  ansible.builtin.include_tasks: delete_keys.yml
+  when: not flush_all and delete_keys_storage

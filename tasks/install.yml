@@ -1,10 +1,32 @@
 ---
+- name: Create group
+  group:
+    name: "{{ etcd_group }}"
+    state: present
+    system: "{{ etcd_group_system | bool }}"
+    gid: "{{ etcd_group_gid | default(omit) }}"
+  when:
+    - etcd_group != "root"
+
+- name: Create user
+  user:
+    name: "{{ etcd_user }}"
+    state: present
+    shell: "{{ etcd_user_shell }}"
+    system: "{{ etcd_user_system | bool }}"
+    create_home: "{{ etcd_user_home is defined and etcd_user_system != true | bool }}"
+    home: "{{ etcd_user_home | default(omit) }}"
+    uid: "{{ etcd_user_uid | default(omit) }}"
+    group: "{{ etcd_group }}"
+  when:
+    - etcd_user != "root"
+
 - name: Create etcd data directory
   file:
     path: "{{ etcd_data_dir }}"
     state: directory
-    owner: root
-    group: root
+    owner: "{{ etcd_user }}"
+    group: "{{ etcd_group }}"
     mode: '0755'
 
 - name: Pull etcd Docker image
@@ -14,10 +36,10 @@
 
 - name: Create etcd systemd service
   template:
-    src: etcd-docker.service.j2
+    src: etcd.service.j2
     dest: "/etc/systemd/system/{{ etcd_cluster }}.service"
-    owner: root
-    group: root
+    owner: "{{ etcd_user }}"
+    group: "{{ etcd_group }}"
     mode: '0644'
 
 - name: Reload systemd daemon
@@ -58,7 +80,7 @@
 - name: Check etcd cluster health
   shell: |
     docker exec {{ etcd_cluster }} /usr/local/bin/etcdctl \
-      --endpoints=http://127.0.0.1:{{ etcd_client_port }} \
+      --endpoints=http://{{ etcd_client_host }}:{{ etcd_client_port }} \
       endpoint health
   environment:
     ETCDCTL_API: "3"

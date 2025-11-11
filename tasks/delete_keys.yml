@@ -1,0 +1,41 @@
+- name: Check etcd health before cleanup
+  shell: "{{ etcdctl_check_health }}"
+  environment:
+    ETCDCTL_API: "3"
+  register: etcd_health_before
+  failed_when: false
+
+- name: Show etcd health status
+  debug:
+    var: etcd_health_before.stdout
+
+- name: Count keys before deletion
+  shell: "{{ etcdctl_count_keys }}"
+  environment:
+    ETCDCTL_API: "3"
+  register: keys_count_before
+  failed_when: false
+
+- name: Show key count before deletion
+  debug:
+    msg: "Keys in etcd before deletion: {{ keys_count_before.stdout }}"
+
+- name: Delete all keys from etcd
+  shell: "{{ etcdctl_delete_all_keys }}"
+  environment:
+    ETCDCTL_API: "3"
+  register: etcd_delete_result
+
+- name: Count keys after deletion
+  shell: "{{ etcdctl_count_keys }}"
+  environment:
+    ETCDCTL_API: "3"
+  register: keys_count_after
+  failed_when: false
+
+- name: Show cleanup results
+  debug:
+    msg: |
+      Deletion result: {{ etcd_delete_result.stdout }}
+      Keys before: {{ keys_count_before.stdout }}
+      Keys after: {{ keys_count_after.stdout }}
