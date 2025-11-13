@@ -42,8 +42,10 @@ ExecStart=/usr/bin/docker run \
   --peer-cert-file=/etc/etcd/ssl/server.pem \
   --peer-key-file=/etc/etcd/ssl/server-key.pem \
   {% endif %}
+
 ExecStop=/usr/bin/docker stop {{ etcd_cluster }}
 ExecStopPost=-/usr/bin/docker rm {{ etcd_cluster }}
+
 Restart=always
 RestartSec=10
 TimeoutStartSec=0
